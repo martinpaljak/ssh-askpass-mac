@@ -137,11 +137,17 @@ class ViewController: NSViewController {
         }
     }
 
-    // SSH_ASKPASS_TIMEOUT: seconds until the dialog cancels itself
+    // Seconds until the dialog cancels itself: SSH_ASKPASS_TIMEOUT if set
+    // (0 for none), else the timeout preference:
+    // defaults write com.hardssh.ssh-askpass-mac timeout -int 30
     func startCountdownIfAsked() {
+        var seconds = UserDefaults.standard.integer(forKey: "timeout")
         if let timeoutString = ProcessInfo.processInfo.environment["SSH_ASKPASS_TIMEOUT"],
-           let timeoutValue = Int(timeoutString), timeoutValue > 0 {
-            self.timeout = timeoutValue
+           let timeoutValue = Int(timeoutString) {
+            seconds = timeoutValue
+        }
+        if seconds > 0 {
+            self.timeout = seconds
             startCountdown()
         }
     }

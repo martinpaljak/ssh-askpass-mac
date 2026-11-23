@@ -94,7 +94,7 @@ OpenSSH runs `ssh-askpass "<prompt text>"` and sets `SSH_ASKPASS_PROMPT` (OpenSS
 
 * **Bold** is the default button (Return). In Confirm, Tab and the arrow keys move the default to OK and back.
 * Esc, the window's close button, Cmd+Q and a timeout all mean cancel: exit 1.
-* `SSH_ASKPASS_TIMEOUT=<seconds>` cancels Confirm and Notice dialogs after that time, with a countdown on the button. Moving the default button in Confirm stops the countdown. Other dialogs ignore it.
+* `SSH_ASKPASS_TIMEOUT=<seconds>` cancels Confirm and Notice dialogs after that time, with a countdown on the button. Unset, the [`timeout` preference](#preferences) applies; `0` means no countdown. Moving the default button in Confirm stops the countdown. Text input ignores it.
 * OpenSSH kills the Notice dialog itself, for example when you touch the FIDO key.
 * Text input is always a password field. For the host key question you type `yes`, `no` or the fingerprint blind; hold the eye to check it.
 
@@ -110,7 +110,7 @@ Each of these can be turned off, see [Preferences](#preferences).
 
 ## Preferences
 
-All are booleans in the `com.hardssh.ssh-askpass-mac` domain, all on by default:
+In the `com.hardssh.ssh-askpass-mac` domain. The booleans are all on by default:
 
 | Key | Off turns off |
 |---|---|
@@ -119,8 +119,13 @@ All are booleans in the `com.hardssh.ssh-askpass-mac` domain, all on by default:
 | `autoFill` | Password AutoFill and the room for its popup under the field |
 | `keychain` | the "Save in keychain" checkbox, the account field and the pre-fill |
 
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `timeout` | integer, seconds | 0, none | cancels Confirm and Notice dialogs after that time, as `SSH_ASKPASS_TIMEOUT` does; the variable wins when set |
+
 ```sh
 defaults write com.hardssh.ssh-askpass-mac autoFill -bool false   # off
+defaults write com.hardssh.ssh-askpass-mac timeout -int 30        # 30 s countdown
 defaults delete com.hardssh.ssh-askpass-mac autoFill              # back to the default
 defaults read com.hardssh.ssh-askpass-mac                         # what is set
 ```
