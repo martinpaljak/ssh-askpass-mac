@@ -1,0 +1,24 @@
+version = 1
+
+[[annotations]]
+path = [
+    ".gitignore",
+    "ssh-askpass.xcodeproj/project.xcworkspace/**",
+    "ssh-askpass.xcodeproj/xcshareddata/**",
+    "ssh-askpass.xcodeproj/xcuserdata/**",
+    "ssh-askpass/Assets.xcassets/**",
+    "ssh-askpass/ssh_askpass.entitlements",
+]
+SPDX-FileCopyrightText = "2018-2023 Lukas Zronek"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = [
+    "README.md",
+    "ssh-askpass.xcodeproj/project.pbxproj",
+    "ssh-askpass/Base.lproj/Main.storyboard",
+    "ssh-askpass/Info.plist",
+    "ssh-askpass/Helper/*.plist",
+]
+SPDX-FileCopyrightText = ["2018-2023 Lukas Zronek", "2025-2026 Martin Paljak"]
+SPDX-License-Identifier = "BSD-2-Clause"

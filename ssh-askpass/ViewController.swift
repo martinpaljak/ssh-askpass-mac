@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018-2023 Lukas Zronek
+// SPDX-FileCopyrightText: 2025-2026 Martin Paljak
+// SPDX-License-Identifier: BSD-2-Clause
 //
 // ViewController.swift
 // This file is part of ssh-askpass-mac

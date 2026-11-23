@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2023 Lukas Zronek
+// SPDX-License-Identifier: BSD-2-Clause
 //
 // SSHAskpass.swift
 // This file is part of ssh-askpass-mac

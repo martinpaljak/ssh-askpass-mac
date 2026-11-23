@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Martin Paljak
+# SPDX-License-Identifier: BSD-2-Clause
+#
 # ssh-askpass-mac from source, HEAD only: a local checkout of this
 # repository is its own tap.
 #   brew tap martinpaljak/ssh-askpass-mac /path/to/checkout

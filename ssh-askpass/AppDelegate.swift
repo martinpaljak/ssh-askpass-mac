@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018-2024 Lukas Zronek
+// SPDX-FileCopyrightText: 2026 Martin Paljak
+// SPDX-License-Identifier: BSD-2-Clause
 //
 // AppDelegate.swift
 // This file is part of ssh-askpass-mac
