@@ -39,13 +39,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.center()
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()
+            // closing the window means cancel, not a process left waiting
+            NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: nil) { _ in
+                exit(1)
+            }
         }
         // LSUIElement in Info.plist keeps the app out of the Dock and the menu bar
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+    // Quit means cancel: NSApp.terminate exits 0, which confirms.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        exit(1)
     }
     
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
