@@ -33,9 +33,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let window = NSApp.windows.first {
             // show window always on top
             window.level = .modalPanel
-            window.orderFrontRegardless()
+            // show it on the current Space, also over a full-screen app
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             // Sets the window’s location to the center of the screen
             window.center()
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
         }
         // LSUIElement in Info.plist keeps the app out of the Dock and the menu bar
         NSApp.activate(ignoringOtherApps: true)
