@@ -37,8 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Sets the window’s location to the center of the screen
             window.center()
         }
-        // don't show app in the dock and don't show the menu
-        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
+        // LSUIElement in Info.plist keeps the app out of the Dock and the menu bar
         NSApp.activate(ignoringOtherApps: true)
     }
 
