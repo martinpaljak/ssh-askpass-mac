@@ -30,6 +30,24 @@
 
 import Cocoa
 
+// A paste into the password field clears the clipboard afterwards, so the
+// secret does not stay there. Cmd+V and the context menu both come through
+// sendAction. Off with:
+// defaults write com.hardssh.ssh-askpass-mac clearClipboard -bool false
+@objc(AskpassApplication)
+class AskpassApplication: NSApplication {
+    override func sendAction(_ action: Selector, to target: Any?, from sender: Any?) -> Bool {
+        let editor = keyWindow?.firstResponder as? NSText
+        let intoPassword = action == #selector(NSText.paste(_:)) && editor?.delegate is NSSecureTextField
+        let handled = super.sendAction(action, to: target, from: sender)
+        let clear = UserDefaults.standard.object(forKey: "clearClipboard") as? Bool ?? true
+        if handled && intoPassword && clear {
+            NSPasteboard.general.clearContents()
+        }
+        return handled
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {

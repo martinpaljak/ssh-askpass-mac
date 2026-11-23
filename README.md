@@ -101,6 +101,12 @@ OpenSSH runs `ssh-askpass "<prompt text>"` and sets `SSH_ASKPASS_PROMPT` (OpenSS
 ### Text input
 
 * **Eye** after the field: hold it to show the text, release to hide it. Focus stays in the password field.
+* **Paste clears the clipboard**: after Cmd+V or Paste into the field, the clipboard is emptied, so the secret doesn't stay there. To keep it:
+
+```sh
+defaults write com.hardssh.ssh-askpass-mac clearClipboard -bool false
+```
+
 * **Password AutoFill**: the field offers entries from the Passwords app ("Passwords..." under the field). macOS never offers to save from the dialog: add SSH entries in Passwords yourself, with a title such as `SSH test.example`. To turn AutoFill off, and with it the space the popup needs under the field:
 
 ```sh
