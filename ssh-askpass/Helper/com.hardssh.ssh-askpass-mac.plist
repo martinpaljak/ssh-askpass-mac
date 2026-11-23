@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>at.zronek.lukas.ssh-askpass</string>
+	<string>com.hardssh.ssh-askpass-mac</string>
 
 	<key>Program</key>
 	<string>/Applications/ssh-askpass.app/Contents/Resources/set-ssh-askpass</string>

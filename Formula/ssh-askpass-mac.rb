@@ -35,8 +35,8 @@ class SshAskpassMac < Formula
         rm -rf /Applications/ssh-askpass.app
         ditto #{opt_prefix}/ssh-askpass.app /Applications/ssh-askpass.app
       To set SSH_ASKPASS for the whole login session, load its Launch Agent:
-        ln -s /Applications/ssh-askpass.app/Contents/Resources/at.zronek.lukas.ssh-askpass.plist ~/Library/LaunchAgents/
-        launchctl load -w ~/Library/LaunchAgents/at.zronek.lukas.ssh-askpass.plist
+        ln -s /Applications/ssh-askpass.app/Contents/Resources/com.hardssh.ssh-askpass-mac.plist ~/Library/LaunchAgents/
+        launchctl load -w ~/Library/LaunchAgents/com.hardssh.ssh-askpass-mac.plist
     EOS
   end
 

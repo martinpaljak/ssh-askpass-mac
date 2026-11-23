@@ -22,7 +22,7 @@ ssh-askpass-mac was inspired by [ksshaskpass](https://github.com/KDE/ksshaskpass
 - Click Open to permently add the app as an exception to your security settings.
 - Open a terminal app and run:
 ```
-ln -s /Applications/ssh-askpass.app/Contents/Resources/at.zronek.lukas.ssh-askpass.plist ~/Library/LaunchAgents/ && launchctl load -w ~/Library/LaunchAgents/at.zronek.lukas.ssh-askpass.plist
+ln -s /Applications/ssh-askpass.app/Contents/Resources/com.hardssh.ssh-askpass-mac.plist ~/Library/LaunchAgents/ && launchctl load -w ~/Library/LaunchAgents/com.hardssh.ssh-askpass-mac.plist
 ```
 - Restart the terminal app
 
@@ -52,8 +52,8 @@ xcodebuild
 
 ```
 mv build/Release/ssh-askpass.app /Applications/
-ln -s /Applications/ssh-askpass.app/Contents/Resources/at.zronek.lukas.ssh-askpass.plist ~/Library/LaunchAgents/
-launchctl load -w ~/Library/LaunchAgents/at.zronek.lukas.ssh-askpass.plist
+ln -s /Applications/ssh-askpass.app/Contents/Resources/com.hardssh.ssh-askpass-mac.plist ~/Library/LaunchAgents/
+launchctl load -w ~/Library/LaunchAgents/com.hardssh.ssh-askpass-mac.plist
 ```
 
 Than restart the Terminal app.
@@ -73,7 +73,7 @@ The setting "Remember passphrase in my keychain" is enabled by default. A change
 You can also disable the keychain with the following command:
 
 ```
-defaults write at.zronek.lukas.ssh-askpass useKeychain -bool false
+defaults write com.hardssh.ssh-askpass-mac useKeychain -bool false
 ```
 
 ## How it works
