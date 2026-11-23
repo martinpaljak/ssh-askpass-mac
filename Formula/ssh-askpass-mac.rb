@@ -21,11 +21,10 @@ class SshAskpassMac < Formula
   depends_on :macos
 
   def install
-    # xcodebuild needs full Xcode, also when xcode-select points to the CLT.
+    # Signed ad hoc: the build sandbox has no access to a signing key. For a
+    # Developer ID build, run make install in a checkout (see the Makefile).
     ENV["DEVELOPER_DIR"] = MacOS::Xcode.prefix.to_s
-    xcodebuild "-project", "ssh-askpass.xcodeproj",
-               "-configuration", "Release",
-               "SYMROOT=build"
+    system "make", "TEAMID=-"
     prefix.install "build/Release/ssh-askpass.app"
   end
 
