@@ -149,9 +149,13 @@ class ViewController: NSViewController {
             cancelButton.keyEquivalent = "\r" // set to return key
             startCountdownIfAsked()
         case .input:
-            // Password AutoFill: the user picks the account from Passwords
-            passwordTextField.contentType = .password
-            addSaveControls(account: sshAskpass.accountHint ?? "")
+            // Password AutoFill: the user picks the account from Passwords.
+            // defaults write com.hardssh.ssh-askpass-mac autoFill -bool false
+            let autoFill = UserDefaults.standard.object(forKey: "autoFill") as? Bool ?? true
+            if autoFill {
+                passwordTextField.contentType = .password
+            }
+            addSaveControls(account: sshAskpass.accountHint ?? "", autoFill: autoFill)
         case .information:
             okButton.isHidden = true
             cancelTitle = "Close"
@@ -169,10 +173,10 @@ class ViewController: NSViewController {
     }
     
     // Unticked "Save in keychain" checkbox on the left of the button row;
-    // ticking it reveals the user@host field below the password, pre-filled
+    // ticking it reveals the user@host field above the password, pre-filled
     // from the prompt text if found. A value saved for that account only
     // pre-fills the password field.
-    func addSaveControls(account: String) {
+    func addSaveControls(account: String, autoFill: Bool) {
         guard let stack = passwordTextField.superview as? NSStackView,
               let index = stack.arrangedSubviews.firstIndex(of: passwordTextField),
               let buttons = cancelButton.superview as? NSStackView,
@@ -201,10 +205,15 @@ class ViewController: NSViewController {
         saveCheckBox = checkBox
 
         let field = NSTextField(string: account)
-        field.contentType = .username
         field.placeholderString = "user@host"
         field.isHidden = !saved
-        stack.insertArrangedSubview(field, at: index + 1)
+        // above the password, as in a login form
+        stack.insertArrangedSubview(field, at: index)
+        if autoFill {
+            field.contentType = .username
+            // room for the Passwords AutoFill popup that opens below the field
+            stack.setCustomSpacing(44, after: passwordTextField)
+        }
         field.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor).isActive = true
         accountField = field
     }
