@@ -30,6 +30,17 @@
 
 import Cocoa
 
+// Calls onHold(true) on mouse down and onHold(false) on release
+class HoldButton: NSButton {
+    var onHold: ((Bool) -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        onHold?(true)
+        super.mouseDown(with: event) // tracks until the mouse is released
+        onHold?(false)
+    }
+}
+
 class ViewController: NSViewController {
     
     @IBOutlet weak var infoTextField: NSTextField!
@@ -42,6 +53,9 @@ class ViewController: NSViewController {
     var saveCheckBox: NSButton?
     // the account the password field was pre-filled for
     var storedAccount: String?
+    // lies over the password field and shows its text while the eye is held
+    var plainTextField: NSTextField?
+    var passwordRow: NSStackView?
 
     var password: String {
         return passwordTextField.stringValue
@@ -155,6 +169,7 @@ class ViewController: NSViewController {
             if autoFill {
                 passwordTextField.contentType = .password
             }
+            addRevealButton()
             addSaveControls(account: sshAskpass.accountHint ?? "", autoFill: autoFill)
         case .information:
             okButton.isHidden = true
@@ -177,8 +192,10 @@ class ViewController: NSViewController {
     // from the prompt text if found. A value saved for that account only
     // pre-fills the password field.
     func addSaveControls(account: String, autoFill: Bool) {
-        guard let stack = passwordTextField.superview as? NSStackView,
-              let index = stack.arrangedSubviews.firstIndex(of: passwordTextField),
+        // the password field, or its row with the eye
+        let password: NSView = passwordRow ?? passwordTextField
+        guard let stack = password.superview as? NSStackView,
+              let index = stack.arrangedSubviews.firstIndex(of: password),
               let buttons = cancelButton.superview as? NSStackView,
               let buttonArea = buttons.superview as? NSStackView else {
             return
@@ -212,10 +229,69 @@ class ViewController: NSViewController {
         if autoFill {
             field.contentType = .username
             // room for the Passwords AutoFill popup that opens below the field
-            stack.setCustomSpacing(44, after: passwordTextField)
+            stack.setCustomSpacing(44, after: password)
         }
-        field.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor).isActive = true
+        field.widthAnchor.constraint(equalTo: password.widthAnchor).isActive = true
         accountField = field
+    }
+
+    // A row [password field][eye] in place of the password field, and a plain
+    // field over the password field that shows the text while the eye is
+    // held. The password field keeps focus and the value.
+    func addRevealButton() {
+        guard let stack = passwordTextField.superview as? NSStackView,
+              let index = stack.arrangedSubviews.firstIndex(of: passwordTextField) else {
+            return
+        }
+        let plain = NSTextField(string: "")
+        plain.isEditable = false
+        plain.isSelectable = false
+        plain.isBezeled = true
+        plain.bezelStyle = .squareBezel
+        plain.drawsBackground = true
+        plain.backgroundColor = .textBackgroundColor
+        plain.textColor = .textColor
+        plain.font = passwordTextField.font
+        plain.isHidden = true
+        plainTextField = plain
+
+        let eye = HoldButton(image: NSImage(systemSymbolName: "eye", accessibilityDescription: "Hold to show password")!,
+                             target: nil, action: nil)
+        eye.isBordered = false
+        eye.toolTip = "Hold to show password"
+        eye.onHold = { [weak self] show in self?.reveal(show) }
+        eye.setContentHuggingPriority(.required, for: .horizontal)
+
+        stack.removeArrangedSubview(passwordTextField)
+        passwordTextField.removeFromSuperview()
+        let row = NSStackView(views: [passwordTextField, eye])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.distribution = .fill
+        row.spacing = 6
+        passwordTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        stack.insertArrangedSubview(row, at: index)
+        row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        passwordRow = row
+
+        plain.translatesAutoresizingMaskIntoConstraints = false
+        // the empty plain field must not pull the password field narrow
+        plain.setContentHuggingPriority(.init(1), for: .horizontal)
+        plain.setContentCompressionResistancePriority(.init(1), for: .horizontal)
+        row.addSubview(plain) // not arranged: lies over the password field
+        NSLayoutConstraint.activate([
+            plain.leadingAnchor.constraint(equalTo: passwordTextField.leadingAnchor),
+            plain.trailingAnchor.constraint(equalTo: passwordTextField.trailingAnchor),
+            plain.topAnchor.constraint(equalTo: passwordTextField.topAnchor),
+            plain.bottomAnchor.constraint(equalTo: passwordTextField.bottomAnchor),
+        ])
+    }
+
+    // The password field only turns transparent: it keeps focus and value
+    func reveal(_ show: Bool) {
+        plainTextField?.stringValue = show ? passwordTextField.stringValue : ""
+        plainTextField?.isHidden = !show
+        passwordTextField.alphaValue = show ? 0 : 1
     }
 
     @objc func saveChanged(_ sender: NSButton) {
