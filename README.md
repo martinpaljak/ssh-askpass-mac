@@ -2,21 +2,9 @@
 
 > Passphrase, confirmation and notice dialog for [OpenSSH](https://www.openssh.com) on macOS, with optional [keychain](https://support.apple.com/guide/mac-help/use-keychains-to-store-passwords-mchlf375f392/mac) storage for key passphrases.
 
-> [!IMPORTANT]
-> **ssh-askpass-mac is the work of [Lukas Zronek](https://github.com/lukas-zronek).**
-> This is a fork of **[lukas-zronek/ssh-askpass-mac](https://github.com/lukas-zronek/ssh-askpass-mac)**, maintained by [Martin Paljak](https://github.com/martinpaljak) for [sudo-approve-agent](https://github.com/martinpaljak/pam-sudo-ssh).
-> All credit for the app goes to Lukas; bugs in the changes below are mine.
-> Screenshots and demo are from the original project.
+OpenSSH runs the program in `$SSH_ASKPASS` when it needs input and has no terminal, or when `SSH_ASKPASS_REQUIRE=force`: a key passphrase, a password, a host key decision, or a yes/no for an agent key. ssh-askpass-mac shows the matching dialog and returns the answer the way OpenSSH expects.
 
-OpenSSH runs the program in `$SSH_ASKPASS` when it needs input and has no terminal, or when `SSH_ASKPASS_REQUIRE=force`: a key passphrase, a password, a host key decision, or a yes/no for an agent key. ssh-askpass-mac shows the matching dialog and returns the answer the way OpenSSH expects. It was inspired by [ksshaskpass](https://github.com/KDE/ksshaskpass) and behaves like the keychain support macOS had before Sierra.
-
-![screenshot](https://github.com/lukas-zronek/screenshots/blob/master/ssh-askpass-mac/passphrase-v3.png "Passphrase dialog")
-
-Use it as the confirmation dialog for keys added with [ssh-add -c](https://man.openbsd.org/ssh-add.1) (RECOMMENDED):
-
-![screenshot](https://github.com/lukas-zronek/screenshots/blob/master/ssh-askpass-mac/confirmation-v3.png "Confirmation dialog")
-
-![demo](https://github.com/lukas-zronek/screenshots/blob/master/ssh-askpass-mac/passphrase-demo-v3.webp "Demo")
+Use it as the confirmation dialog for keys added with [ssh-add -c](https://man.openbsd.org/ssh-add.1) (RECOMMENDED).
 
 ## Changes in this fork
 
@@ -80,7 +68,7 @@ launchctl load -w ~/Library/LaunchAgents/com.hardssh.ssh-askpass-mac.plist
 
 Restart your terminal app afterwards. Coming from the original app? Unload and remove `~/Library/LaunchAgents/at.zronek.lukas.ssh-askpass.plist` first.
 
-Skip this if only one program needs the dialog: sudo-approve-agent, for example, sets `SSH_ASKPASS` in its own environment.
+Skip this if only one program needs the dialog and sets `SSH_ASKPASS` in its own environment.
 
 ## How it is launched
 
@@ -89,7 +77,7 @@ OpenSSH runs `ssh-askpass "<prompt text>"` and sets `SSH_ASKPASS_PROMPT` (OpenSS
 | `SSH_ASKPASS_PROMPT` | Sent by | Dialog | Buttons | Answer on stdout | Exit status |
 |---|---|---|---|---|---|
 | `confirm` | `ssh-agent` for keys added with `-c`, `ssh` with `AddKeysToAgent ask` | Confirm | **Cancel**, OK | none | OK: 0, otherwise 1 |
-| `none` | `ssh` while waiting for a FIDO key touch, sudo-approve-agent | Notice | **Close** | none | always 1 |
+| `none` | `ssh` while waiting for a FIDO key touch | Notice | **Close** | none | always 1 |
 | unset or other | `ssh` and `ssh-add`: passphrases, passwords, the host key question | Text input | Cancel, **OK** | the typed text | OK: 0, otherwise 1 |
 
 * **Bold** is the default button (Return). In Confirm, Tab and the arrow keys move the default to OK and back.
@@ -145,3 +133,5 @@ With [Secure Keyboard Entry](https://support.apple.com/guide/terminal/use-secure
 ## License
 
 [BSD 2-Clause](LICENSE), copyright (c) 2018-2023 Lukas Zronek, with changes copyright (c) 2025-2026 Martin Paljak. Every file carries SPDX information ([REUSE](https://reuse.software) 3.3); `make reuse` checks it.
+
+Based on [ssh-askpass-mac](https://github.com/lukas-zronek/ssh-askpass-mac) by [Lukas Zronek](https://github.com/lukas-zronek), which was inspired by [ksshaskpass](https://github.com/KDE/ksshaskpass).
