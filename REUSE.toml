@@ -15,6 +15,7 @@ SPDX-License-Identifier = "BSD-2-Clause"
 [[annotations]]
 path = [
     "README.md",
+    "TODO.md",
     "ssh-askpass.xcodeproj/project.pbxproj",
     "ssh-askpass/Base.lproj/Main.storyboard",
     "ssh-askpass/Info.plist",

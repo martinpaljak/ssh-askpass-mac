@@ -26,8 +26,9 @@ Use it as the confirmation dialog for keys added with [ssh-add -c](https://man.o
 * No Dock icon or menu bar, ever (`LSUIElement`). The window can't be minimized or resized.
 * The dialog shows on the current Space, also over a full-screen app.
 * Closing the window and Cmd+Q mean **cancel**. Before, the close button left the process hanging and Cmd+Q exited 0, which confirms.
-* Keychain lookups only match items this app stored (service `SSH`). Before, a password prompt for `user@host` could pick up another app's item for the same account.
-* The keychain checkbox is hidden when there is nothing to store the value under.
+* The dialog type comes only from `SSH_ASKPASS_PROMPT`. The original guessed it from 7 patterns of OpenSSH's prompt text.
+* The keychain only **pre-fills** the field. The original answered a matching prompt from the keychain with no dialog at all.
+* Password AutoFill from the Passwords app, and an eye after the field that shows the text while you hold it.
 * Bundle ID `com.hardssh.ssh-askpass-mac`, Homebrew formula, `make` build with Developer ID signing.
 
 ## Install
@@ -83,49 +84,36 @@ Skip this if only one program needs the dialog: sudo-approve-agent, for example,
 
 ## How it is launched
 
-OpenSSH runs `ssh-askpass "<prompt text>"`. The dialog type comes from `SSH_ASKPASS_PROMPT` first, then from the prompt text:
+OpenSSH runs `ssh-askpass "<prompt text>"` and sets `SSH_ASKPASS_PROMPT` (OpenSSH 8.4 and later). The variable alone picks the dialog; the prompt text is only shown:
 
-| `SSH_ASKPASS_PROMPT` | Prompt text (matched in this order) | Sent by | Dialog |
-|---|---|---|---|
-| `confirm` | anything | `ssh-agent` for keys added with `-c`, `ssh` with `AddKeysToAgent ask` | Confirm |
-| `none` | anything | `ssh` while waiting for a FIDO key touch, sudo-approve-agent | Notice |
-| unset or other | `Enter passphrase for key '<path>': ` | `ssh` | Passphrase |
-| | `Enter passphrase for <path>: `, optionally with ` (will confirm each use)` | `ssh-add` | Passphrase |
-| | `Bad passphrase, try again for <path>: ` | `ssh-add` | Passphrase, no keychain lookup |
-| | `Allow use of key <path>?` | `ssh-agent` older than 8.4 | Confirm |
-| | `Add key <path> (<comment>) to agent?` | `ssh` older than 8.4 with `AddKeysToAgent ask` | Confirm |
-| | `The authenticity of host '<host>' can't be established.` | `ssh` | Text input: type `yes`, `no` or the fingerprint |
-| | `(<user@host>) Password:` | `ssh`, keyboard-interactive | Password |
-| | `<user@host>'s password: ` | `ssh`, password authentication | Password |
-| | anything else, or no argument | | Text input, no keychain |
-
-| Dialog | Buttons | Answer on stdout | Exit status |
-|---|---|---|---|
-| Passphrase, Password, Text input | Cancel, **OK** | OK: the typed text | OK: 0, otherwise 1 |
-| Confirm | **Cancel**, OK | none | OK: 0, otherwise 1 |
-| Notice | **Close** | none | always 1 |
+| `SSH_ASKPASS_PROMPT` | Sent by | Dialog | Buttons | Answer on stdout | Exit status |
+|---|---|---|---|---|---|
+| `confirm` | `ssh-agent` for keys added with `-c`, `ssh` with `AddKeysToAgent ask` | Confirm | **Cancel**, OK | none | OK: 0, otherwise 1 |
+| `none` | `ssh` while waiting for a FIDO key touch, sudo-approve-agent | Notice | **Close** | none | always 1 |
+| unset or other | `ssh` and `ssh-add`: passphrases, passwords, the host key question | Text input | Cancel, **OK** | the typed text | OK: 0, otherwise 1 |
 
 * **Bold** is the default button (Return). In Confirm, Tab and the arrow keys move the default to OK and back.
 * Esc, the window's close button, Cmd+Q and a timeout all mean cancel: exit 1.
 * `SSH_ASKPASS_TIMEOUT=<seconds>` cancels Confirm and Notice dialogs after that time, with a countdown on the button. Moving the default button in Confirm stops the countdown. Other dialogs ignore it.
 * OpenSSH kills the Notice dialog itself, for example when you touch the FIDO key.
+* Text input is always a password field. For the host key question you type `yes`, `no` or the fingerprint blind; hold the eye to check it.
 
-### Keychain
+### Text input
 
-Only Passphrase and Password dialogs use the keychain. The account is the key path (made absolute, symlinks resolved) or `user@host`:
-
-* If the keychain has a value for the account, ssh-askpass-mac prints it and shows **no dialog** at all. `Bad passphrase` always shows the dialog.
-* With "Remember passphrase in my keychain" ticked, OK stores the typed value as a generic password with service `SSH`, label `SSH: <account>`. If one exists, you are asked whether to replace it.
-* The checkbox state is remembered. To turn it off by default:
+* **Eye** after the field: hold it to show the text, release to hide it. Focus stays in the password field.
+* **Password AutoFill**: the field offers entries from the Passwords app ("Passwords..." under the field). macOS never offers to save from the dialog: add SSH entries in Passwords yourself, with a title such as `SSH test.example`. To turn AutoFill off, and with it the space the popup needs under the field:
 
 ```sh
-defaults write com.hardssh.ssh-askpass-mac useKeychain -bool false
+defaults write com.hardssh.ssh-askpass-mac autoFill -bool false
 ```
+
+* **Save in keychain** (left of the buttons, unticked): ticking it shows an account field above the password, pre-filled with the first `user@host` in the prompt text. OK then saves the value to the login keychain as an internet password for `ssh://host`, account `user`. The Passwords app doesn't show these; see [TODO.md](TODO.md).
+* Next time a prompt names the same `user@host`, the saved value **pre-fills** the field, and the box starts ticked. The dialog always shows, and Cancel always works. Untick the box and press OK to delete the saved value.
 
 ## Security
 
-* Values go to the login keychain, with no app trusted. macOS asks before handing them out; "Always Allow" trusts this app for that item from then on. You SHOULD NOT click "Always Allow" unless the build is signed (see [From source](#from-source)).
-* Use the Keychain Access app to move items to a separate keychain with auto-lock. ssh-askpass-mac finds them in any keychain.
+* No prompt is ever answered without the dialog.
+* Saved values go to the login keychain, readable by the app that saved them. Rebuilds with the same `TEAMID` count as the same app; ad hoc builds ask again each time (see [From source](#from-source)).
 * The typed value sits in the app's memory, and Swift gives no way to wipe it. A local administrator can read it out.
 
 ## Notes
