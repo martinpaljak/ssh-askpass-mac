@@ -39,6 +39,7 @@ class ViewController: NSViewController {
     let sshAskpass = SSHAskpass.shared
     var timeout = 0
     var timer: Timer?
+    var cancelTitle = "Cancel"
     
 #if swift(>=4.2)
     let cautionName = NSImage.cautionName
@@ -67,7 +68,7 @@ class ViewController: NSViewController {
             if self.timeout > 0 {
                 timer?.invalidate()
                 timer = nil
-                cancelButton.title = "Cancel"
+                cancelButton.title = cancelTitle
             }
             if self.view.window?.firstResponder === cancelButton {
                 self.view.window?.makeFirstResponder(okButton)
@@ -99,8 +100,17 @@ class ViewController: NSViewController {
         }
     }
 
+    // SSH_ASKPASS_TIMEOUT: seconds until the dialog cancels itself
+    func startCountdownIfAsked() {
+        if let timeoutString = ProcessInfo.processInfo.environment["SSH_ASKPASS_TIMEOUT"],
+           let timeoutValue = Int(timeoutString), timeoutValue > 0 {
+            self.timeout = timeoutValue
+            startCountdown()
+        }
+    }
+
     func updateCounter() {
-        cancelButton.title = "Cancel (in \(timeout)s)"
+        cancelButton.title = "\(cancelTitle) (in \(timeout)s)"
     }
 
     override func viewDidLoad() {
@@ -118,17 +128,7 @@ class ViewController: NSViewController {
 
             okButton.keyEquivalent = "" // reset default behaviour
             cancelButton.keyEquivalent = "\r" // set to return key
-
-            // Start the counter, if asked for
-            if let timeoutString = ProcessInfo.processInfo.environment["SSH_ASKPASS_TIMEOUT"],
-               let timeoutValue = Int(timeoutString) {
-                self.timeout = timeoutValue
-            }
-
-            // Start the countdown if timeout is greater than zero
-            if self.timeout > 0 {
-                startCountdown()
-            }
+            startCountdownIfAsked()
         case .passphrase:
             if sshAskpass.account.isEmpty {
                 keychainCheckBox.state = NSControl.StateValue.off
@@ -147,13 +147,15 @@ class ViewController: NSViewController {
             }
         case .information:
             okButton.isHidden = true
-            cancelButton.title = "Close"
+            cancelTitle = "Close"
+            cancelButton.title = cancelTitle
             passwordTextField.isHidden = true
             if let controlView = keychainCheckBox.controlView {
                 controlView.isHidden = true
             }
             okButton.keyEquivalent = "" // reset default behaviour
             cancelButton.keyEquivalent = "\r" // set to return key
+            startCountdownIfAsked()
         }
         
         if let obj = UserDefaults.standard.object(forKey: "useKeychain") {
