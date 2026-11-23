@@ -50,6 +50,25 @@ class ViewController: NSViewController {
     var timer: Timer?
     var cancelTitle = "Cancel"
 
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        fitWindow()
+        view.window?.center()
+    }
+
+    // The window takes the size of its content, keeping its top edge: it
+    // never keeps the storyboard size or the size before a field was hidden.
+    func fitWindow() {
+        guard let window = view.window else {
+            return
+        }
+        view.layoutSubtreeIfNeeded()
+        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: view.fittingSize))
+        frame.origin.x = window.frame.origin.x
+        frame.origin.y = window.frame.maxY - frame.height
+        window.setFrame(frame, display: true)
+    }
+
     override func viewDidAppear() {
         // set first responder to allow closing window with escape key
         switch self.sshAskpass.type {
@@ -157,7 +176,7 @@ class ViewController: NSViewController {
         guard let stack = passwordTextField.superview as? NSStackView,
               let index = stack.arrangedSubviews.firstIndex(of: passwordTextField),
               let buttons = cancelButton.superview as? NSStackView,
-              let buttonRow = buttons.superview as? NSStackView else {
+              let buttonArea = buttons.superview as? NSStackView else {
             return
         }
         // pre-filled: saved already, so the box starts ticked; unticking it
@@ -169,10 +188,14 @@ class ViewController: NSViewController {
         let saved = storedAccount != nil
         let checkBox = NSButton(checkboxWithTitle: "Save in keychain", target: self, action: #selector(saveChanged(_:)))
         checkBox.state = saved ? .on : .off
-        // the button row becomes [checkbox ... Cancel OK]
+        // a new row [checkbox ... Cancel OK] in place of the buttons
+        buttonArea.removeArrangedSubview(buttons)
+        buttons.removeFromSuperview()
+        let buttonRow = NSStackView(views: [checkBox, buttons])
         buttonRow.orientation = .horizontal
         buttonRow.alignment = .centerY
-        buttonRow.insertArrangedSubview(checkBox, at: 0)
+        buttonArea.addArrangedSubview(buttonRow)
+        buttonRow.widthAnchor.constraint(equalTo: buttonArea.widthAnchor).isActive = true
         checkBox.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
         buttons.setContentHuggingPriority(.required, for: .horizontal)
         saveCheckBox = checkBox
@@ -188,6 +211,7 @@ class ViewController: NSViewController {
 
     @objc func saveChanged(_ sender: NSButton) {
         accountField?.isHidden = sender.state != .on
+        fitWindow()
     }
 
     @IBAction func ok(_ sender: Any) {
