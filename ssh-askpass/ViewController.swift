@@ -129,18 +129,14 @@ class ViewController: NSViewController {
             okButton.keyEquivalent = "" // reset default behaviour
             cancelButton.keyEquivalent = "\r" // set to return key
             startCountdownIfAsked()
-        case .passphrase:
+        case .passphrase, .password, .badPassphrase:
+            // no key path or user@host to store the value under
             if sshAskpass.account.isEmpty {
                 keychainCheckBox.state = NSControl.StateValue.off
-                keychainCheckBox.isEnabled = false
+                if let controlView = keychainCheckBox.controlView {
+                    controlView.isHidden = true
+                }
             }
-        case .password:
-            if sshAskpass.account.isEmpty {
-                keychainCheckBox.state = NSControl.StateValue.off
-                keychainCheckBox.isEnabled = false
-            }
-        case .badPassphrase:
-            break
         case .inputConfirmation:
             if let controlView = keychainCheckBox.controlView {
                 controlView.isHidden = true
