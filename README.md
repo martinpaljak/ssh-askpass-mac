@@ -100,26 +100,32 @@ OpenSSH runs `ssh-askpass "<prompt text>"` and sets `SSH_ASKPASS_PROMPT` (OpenSS
 
 ### Text input
 
+Each of these can be turned off, see [Preferences](#preferences).
+
 * **Eye** after the field: hold it to show the text, release to hide it. Focus stays in the password field.
-* **Paste clears the clipboard**: after Cmd+V or Paste into the field, the clipboard is emptied, so the secret doesn't stay there. To keep it:
-
-```sh
-defaults write com.hardssh.ssh-askpass-mac clearClipboard -bool false
-```
-
-* **Password AutoFill**: the field offers entries from the Passwords app ("Passwords..." under the field). macOS never offers to save from the dialog: add SSH entries in Passwords yourself, with a title such as `SSH test.example`. To turn AutoFill off, and with it the space the popup needs under the field:
-
-```sh
-defaults write com.hardssh.ssh-askpass-mac autoFill -bool false
-```
-
+* **Paste clears the clipboard**: after Cmd+V or Paste into the field, the clipboard is emptied, so the secret doesn't stay there.
+* **Password AutoFill**: the field offers entries from the Passwords app ("Passwords..." under the field), with room for that popup under the field. macOS never offers to save from the dialog: add SSH entries in Passwords yourself, with a title such as `SSH test.example`.
 * **Save in keychain** (left of the buttons, unticked): ticking it shows an account field above the password, pre-filled with the first `user@host` in the prompt text. OK then saves the value to the login keychain as an internet password for `ssh://host`, account `user`. The Passwords app doesn't show these; see [TODO.md](TODO.md).
 * Next time a prompt names the same `user@host`, the saved value **pre-fills** the field, and the box starts ticked. The dialog always shows, and Cancel always works. Untick the box and press OK to delete the saved value.
-* To turn the checkbox and the pre-fill off:
+
+## Preferences
+
+All are booleans in the `com.hardssh.ssh-askpass-mac` domain, all on by default:
+
+| Key | Off turns off |
+|---|---|
+| `showPassword` | the eye after the password field |
+| `clearClipboard` | emptying the clipboard after a paste into the password field |
+| `autoFill` | Password AutoFill and the room for its popup under the field |
+| `keychain` | the "Save in keychain" checkbox, the account field and the pre-fill |
 
 ```sh
-defaults write com.hardssh.ssh-askpass-mac keychain -bool false
+defaults write com.hardssh.ssh-askpass-mac autoFill -bool false   # off
+defaults delete com.hardssh.ssh-askpass-mac autoFill              # back to the default
+defaults read com.hardssh.ssh-askpass-mac                         # what is set
 ```
+
+They take effect at the next dialog.
 
 ## Security
 

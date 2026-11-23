@@ -166,12 +166,17 @@ class ViewController: NSViewController {
             // Password AutoFill: the user picks the account from Passwords.
             // defaults write com.hardssh.ssh-askpass-mac autoFill -bool false
             let autoFill = UserDefaults.standard.object(forKey: "autoFill") as? Bool ?? true
-            addRevealButton()
+            // The eye. Off with:
+            // defaults write com.hardssh.ssh-askpass-mac showPassword -bool false
+            if UserDefaults.standard.object(forKey: "showPassword") as? Bool ?? true {
+                addRevealButton()
+            }
             if autoFill {
                 passwordTextField.contentType = .password
                 // room for the Passwords AutoFill popup that opens below the field
-                if let row = passwordRow, let stack = row.superview as? NSStackView {
-                    stack.setCustomSpacing(44, after: row)
+                let password: NSView = passwordRow ?? passwordTextField
+                if let stack = password.superview as? NSStackView {
+                    stack.setCustomSpacing(44, after: password)
                 }
             }
             // "Save in keychain" and the pre-fill. Off with:
