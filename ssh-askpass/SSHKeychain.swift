@@ -31,12 +31,17 @@ class SSHKeychain {
     
     static let shared = SSHKeychain()
     
+    // Only items this app made: other apps also store generic passwords
+    // under accounts like user@host.
+    let service = "SSH"
+
     private init() {}
     
     func get(account: String) -> String? {
         var result: AnyObject?
         let query: [CFString: AnyObject] = [
             kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service as CFString,
             kSecAttrAccount: account as CFString,
             kSecMatchLimit: kSecMatchLimitOne,
             kSecReturnData: kCFBooleanTrue
@@ -65,7 +70,7 @@ class SSHKeychain {
             kSecClass: kSecClassGenericPassword,
             kSecAttrLabel: label,
             kSecAttrDescription: "OpenSSH passphrase",
-            kSecAttrService: "SSH",
+            kSecAttrService: service,
             kSecAttrAccessible: kSecAttrAccessibleWhenUnlocked,
             kSecAttrAccess: accessRef!,
             kSecAttrAccount: account,
@@ -80,6 +85,7 @@ class SSHKeychain {
     func delete(account: String) -> OSStatus {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
             kSecAttrAccount: account
         ]
         return SecItemDelete(query as CFDictionary)
