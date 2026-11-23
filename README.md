@@ -115,6 +115,11 @@ defaults write com.hardssh.ssh-askpass-mac autoFill -bool false
 
 * **Save in keychain** (left of the buttons, unticked): ticking it shows an account field above the password, pre-filled with the first `user@host` in the prompt text. OK then saves the value to the login keychain as an internet password for `ssh://host`, account `user`. The Passwords app doesn't show these; see [TODO.md](TODO.md).
 * Next time a prompt names the same `user@host`, the saved value **pre-fills** the field, and the box starts ticked. The dialog always shows, and Cancel always works. Untick the box and press OK to delete the saved value.
+* To turn the checkbox and the pre-fill off:
+
+```sh
+defaults write com.hardssh.ssh-askpass-mac keychain -bool false
+```
 
 ## Security
 
