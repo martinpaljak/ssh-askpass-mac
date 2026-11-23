@@ -33,49 +33,29 @@ class SSHAskpass {
 
     static let shared = SSHAskpass()
 
+    // SSH_ASKPASS_PROMPT (OpenSSH 8.4+): confirm, none, or unset for text input
     enum PromptType {
-        case passphrase
-        case badPassphrase
+        case input
         case confirmation
-        case inputConfirmation
         case information
-        case password
     }
 
-    let patterns: KeyValuePairs = [
-        "^Enter passphrase for key '(.*)': $": PromptType.passphrase,
-        "^Enter passphrase for (.*?)( \\(will confirm each use\\))?: $": PromptType.passphrase,
-        "^Bad passphrase, try again for (.*?)( \\(will confirm each use\\))?: $": PromptType.badPassphrase,
-        "^Allow use of key (.*)\\?": PromptType.confirmation,
-        "^Add key (.*) \\(.*\\) to agent\\?$": PromptType.confirmation,
-        "^The authenticity of host '(.*)' can't be established.": PromptType.inputConfirmation,
-        "^\\((.*)\\) Password:$": PromptType.password,
-        "^(.*)'s password: $": PromptType.password
-    ]
-
     var message = String()
-    var account = String()
-    var type:PromptType = PromptType.passphrase
+    var type:PromptType = PromptType.input
+    // first user@host in the prompt text, a username hint for Password AutoFill
+    var accountHint: String?
 
     func setup(message: String, promptEnv: String?) {
         self.message = message
-        
-        if promptEnv == "confirm" {
-            self.type = PromptType.confirmation
-            return
-        } else if promptEnv == "none" {
-            self.type = PromptType.information
-            return
+
+        switch promptEnv {
+        case "confirm": self.type = PromptType.confirmation
+        case "none": self.type = PromptType.information
+        default: self.type = PromptType.input
         }
 
-        for (pattern, type) in patterns {
-            if let account = message.parseAccount(pattern: pattern) {
-                if account != "(stdin)" {
-                    self.account = account
-                }
-                self.type = type
-                break;
-            }
+        if let range = message.range(of: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", options: .regularExpression) {
+            self.accountHint = String(message[range])
         }
     }
 }

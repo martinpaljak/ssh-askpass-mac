@@ -34,28 +34,29 @@ class ViewController: NSViewController {
     
     @IBOutlet weak var infoTextField: NSTextField!
     @IBOutlet weak var passwordTextField: NSSecureTextField!
-    @IBOutlet weak var keychainCheckBox: NSButtonCell!
     @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet weak var okButton: NSButton!
-    
-    let sshKeychain = SSHKeychain.shared
+
     let sshAskpass = SSHAskpass.shared
+    var accountField: NSTextField?
+    var saveCheckBox: NSButton?
+    // the account the password field was pre-filled for
+    var storedAccount: String?
+
+    var password: String {
+        return passwordTextField.stringValue
+    }
     var timeout = 0
     var timer: Timer?
     var cancelTitle = "Cancel"
-    
-#if swift(>=4.2)
-    let cautionName = NSImage.cautionName
-#else
-    let cautionName = NSImage.Name.caution
-#endif
 
     override func viewDidAppear() {
         // set first responder to allow closing window with escape key
         switch self.sshAskpass.type {
         case .confirmation, .information:
             self.view.window?.makeFirstResponder(cancelButton)
-        default: break // passwordTextField is first responder by default
+        case .input:
+            self.view.window?.makeFirstResponder(passwordTextField)
         }
     }
 
@@ -125,46 +126,21 @@ class ViewController: NSViewController {
         switch self.sshAskpass.type {
         case .confirmation:
             passwordTextField.isHidden = true
-            if let controlView = keychainCheckBox.controlView {
-                controlView.isHidden = true
-            }
-
             okButton.keyEquivalent = "" // reset default behaviour
             cancelButton.keyEquivalent = "\r" // set to return key
             startCountdownIfAsked()
-        case .passphrase, .password, .badPassphrase:
-            // no key path or user@host to store the value under
-            if sshAskpass.account.isEmpty {
-                keychainCheckBox.state = NSControl.StateValue.off
-                if let controlView = keychainCheckBox.controlView {
-                    controlView.isHidden = true
-                }
-            }
-        case .inputConfirmation:
-            if let controlView = keychainCheckBox.controlView {
-                controlView.isHidden = true
-            }
+        case .input:
+            // Password AutoFill: the user picks the account from Passwords
+            passwordTextField.contentType = .password
+            addSaveControls(account: sshAskpass.accountHint ?? "")
         case .information:
             okButton.isHidden = true
             cancelTitle = "Close"
             cancelButton.title = cancelTitle
             passwordTextField.isHidden = true
-            if let controlView = keychainCheckBox.controlView {
-                controlView.isHidden = true
-            }
             okButton.keyEquivalent = "" // reset default behaviour
             cancelButton.keyEquivalent = "\r" // set to return key
             startCountdownIfAsked()
-        }
-        
-        if let obj = UserDefaults.standard.object(forKey: "useKeychain") {
-            if let useKeychain = obj as? Bool {
-                if (useKeychain) {
-                    keychainCheckBox.state = NSControl.StateValue.on
-                } else {
-                    keychainCheckBox.state = NSControl.StateValue.off
-                }
-            }
         }
     }
 
@@ -173,59 +149,109 @@ class ViewController: NSViewController {
         exit(1)
     }
     
-    @IBAction func ok(_ sender: Any) {
-        if (sshAskpass.type == .passphrase || sshAskpass.type == .badPassphrase || sshAskpass.type == .password) && !sshAskpass.account.isEmpty && keychainCheckBox.state == NSControl.StateValue.on {
-            let status = sshKeychain.add(account: sshAskpass.account, password: passwordTextField.stringValue)
-
-            if status == errSecDuplicateItem {
-                ask(messageText: "Warning", informativeText: "A passphrase for \"\(sshAskpass.account)\" already exists in the keychain.\nDo you want to replace it?", okButtonTitle: "Replace", completionHandler: { (result) in
-                    if result == .alertFirstButtonReturn {
-                        let status = self.sshKeychain.delete(account: self.sshAskpass.account)
-                        if status == errSecSuccess {
-                            self.ok(self)
-                        } else {
-                            self.keychainError(status: status)
-                            return
-                        }
-                    }
-                })
-                return
-            } else if status != errSecSuccess {
-                keychainError(status: status)
-                return
-            }
+    // Unticked "Save in keychain" checkbox on the left of the button row;
+    // ticking it reveals the user@host field below the password, pre-filled
+    // from the prompt text if found. A value saved for that account only
+    // pre-fills the password field.
+    func addSaveControls(account: String) {
+        guard let stack = passwordTextField.superview as? NSStackView,
+              let index = stack.arrangedSubviews.firstIndex(of: passwordTextField),
+              let buttons = cancelButton.superview as? NSStackView,
+              let buttonRow = buttons.superview as? NSStackView else {
+            return
         }
-        print(passwordTextField.stringValue)
+        // pre-filled: saved already, so the box starts ticked; unticking it
+        // and pressing OK deletes the entry
+        if let stored = loadPassword(account: account) {
+            passwordTextField.stringValue = stored
+            storedAccount = account
+        }
+        let saved = storedAccount != nil
+        let checkBox = NSButton(checkboxWithTitle: "Save in keychain", target: self, action: #selector(saveChanged(_:)))
+        checkBox.state = saved ? .on : .off
+        // the button row becomes [checkbox ... Cancel OK]
+        buttonRow.orientation = .horizontal
+        buttonRow.alignment = .centerY
+        buttonRow.insertArrangedSubview(checkBox, at: 0)
+        checkBox.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
+        buttons.setContentHuggingPriority(.required, for: .horizontal)
+        saveCheckBox = checkBox
+
+        let field = NSTextField(string: account)
+        field.contentType = .username
+        field.placeholderString = "user@host"
+        field.isHidden = !saved
+        stack.insertArrangedSubview(field, at: index + 1)
+        field.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor).isActive = true
+        accountField = field
+    }
+
+    @objc func saveChanged(_ sender: NSButton) {
+        accountField?.isHidden = sender.state != .on
+    }
+
+    @IBAction func ok(_ sender: Any) {
+        if saveCheckBox?.state == .on, let account = accountField?.stringValue {
+            savePassword(account: account, password: password)
+        } else if let account = storedAccount {
+            deletePassword(account: account)
+        }
+        print(password)
         exit(0)
     }
-    
-    @IBAction func useKeychainChanged(_ sender: NSButtonCell) {
-        var useKeychain:Bool = false
-        if (sender.state == NSControl.StateValue.on) {
-            useKeychain = true
+
+    // Internet password for ssh://host with account user, in the login
+    // keychain. (The Passwords app needs an entitlement, see TODO.md.)
+    func keychainItem(account: String) -> [CFString: Any]? {
+        guard let at = account.lastIndex(of: "@"), at != account.startIndex,
+              account.index(after: at) != account.endIndex else {
+            return nil
         }
-        UserDefaults.standard.set(useKeychain, forKey: "useKeychain")
+        return [
+            kSecClass: kSecClassInternetPassword,
+            kSecAttrProtocol: kSecAttrProtocolSSH,
+            kSecAttrServer: String(account[account.index(after: at)...]),
+            kSecAttrAccount: String(account[..<at]),
+        ]
     }
-    
-    func keychainError(status: OSStatus) {
-        error(messageText: "Keychain Error", informativeText: SecCopyErrorMessageString(status, nil)! as String)
+
+    func loadPassword(account: String) -> String? {
+        guard let item = keychainItem(account: account) else {
+            return nil
+        }
+        let query = item.merging([kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne]) { $1 }
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
     }
-    
-    func error(messageText: String, informativeText: String) {
-        let alert = NSAlert()
-        alert.messageText = messageText
-        alert.informativeText = informativeText
-        alert.icon = NSImage(named: cautionName)
-        alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+
+    // A failure only logs: the answer still goes to OpenSSH.
+    func savePassword(account: String, password: String) {
+        guard let item = keychainItem(account: account) else {
+            FileHandle.standardError.write("ssh-askpass: not saved, account is not user@host\n".data(using: .utf8)!)
+            return
+        }
+        let value: [CFString: Any] = [
+            kSecValueData: password.data(using: .utf8)!,
+            kSecAttrLabel: "SSH \(account)",
+        ]
+        var status = SecItemUpdate(item as CFDictionary, value as CFDictionary)
+        if status == errSecItemNotFound {
+            status = SecItemAdd(item.merging(value) { $1 } as CFDictionary, nil)
+        }
+        let text = SecCopyErrorMessageString(status, nil) as String? ?? "\(status)"
+        FileHandle.standardError.write("ssh-askpass: save \(account): \(status) \(text)\n".data(using: .utf8)!)
     }
-    
-    func ask(messageText: String, informativeText: String, okButtonTitle: String, completionHandler: ((NSApplication.ModalResponse) -> Void)? = nil) {
-        let alert = NSAlert()
-        alert.messageText = messageText
-        alert.informativeText = informativeText
-        alert.icon = NSImage(named: cautionName)
-        _ = alert.addButton(withTitle: okButtonTitle)
-        _ = alert.addButton(withTitle: "Cancel")
-        alert.beginSheetModal(for: self.view.window!, completionHandler: completionHandler)
+
+    func deletePassword(account: String) {
+        guard let item = keychainItem(account: account) else {
+            return
+        }
+        let status = SecItemDelete(item as CFDictionary)
+        let text = SecCopyErrorMessageString(status, nil) as String? ?? "\(status)"
+        FileHandle.standardError.write("ssh-askpass: delete \(account): \(status) \(text)\n".data(using: .utf8)!)
     }
 }

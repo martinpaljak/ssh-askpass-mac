@@ -143,16 +143,6 @@
                                             </allowedInputSourceLocales>
                                         </secureTextFieldCell>
                                     </secureTextField>
-                                    <button horizontalHuggingPriority="249" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="eJm-a1-X8C">
-                                        <rect key="frame" x="-2" y="31" width="402" height="18"/>
-                                        <buttonCell key="cell" type="check" title="Remember passphrase in my keychain" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="vTY-yF-QDM">
-                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                            <connections>
-                                                <action selector="useKeychainChanged:" target="XfG-lQ-9wD" id="AtP-Wi-Znm"/>
-                                            </connections>
-                                        </buttonCell>
-                                    </button>
                                     <stackView distribution="fill" orientation="vertical" alignment="trailing" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" verticalCompressionResistancePriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fHV-OC-gaY">
                                         <rect key="frame" x="0.0" y="0.0" width="400" height="20"/>
                                         <subviews>
@@ -218,10 +208,8 @@ DQ
                                     <integer value="1000"/>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
-                                    <integer value="1000"/>
                                 </visibilityPriorities>
                                 <customSpacing>
-                                    <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
@@ -238,7 +226,6 @@ DQ
                     <connections>
                         <outlet property="cancelButton" destination="3KT-jC-o0M" id="VY8-gL-axx"/>
                         <outlet property="infoTextField" destination="pPa-nc-OI7" id="4pg-XO-0e0"/>
-                        <outlet property="keychainCheckBox" destination="vTY-yF-QDM" id="EPY-Wc-USv"/>
                         <outlet property="okButton" destination="1Je-Z5-8wL" id="FEV-pX-zoR"/>
                         <outlet property="passwordTextField" destination="jN8-pL-Gj8" id="Wdt-VH-uft"/>
                     </connections>
